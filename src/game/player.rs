@@ -1,13 +1,15 @@
-use crate::game::board::Board;
 use crate::game::Move;
-use std::collections::HashSet;
+use crate::game::board::Board;
 
-pub trait Controller {
-    fn get_next_move(&self, board: &Board) -> Move;
-    fn get_symbol(&self) -> &char;
-}
+use std::collections::HashSet;
+use std::fmt::{Debug, Display};
 
 pub mod controllers;
+pub trait Controller {
+    fn get_next_move<'a, 'b>(&self, board: &'b Board) -> Move<'a> where 'a : 'b;
+}
+
+
 
 pub struct Player {
     id: i32,
@@ -26,6 +28,25 @@ impl Player {
     }
 }
 
+impl Controller for Player {
+    fn get_next_move<'a, 'b>(&self, board: &'b Board) -> Move<'a> where 'a : 'b {
+        self.controller.get_next_move(board)
+    }
+}
+
+impl Debug for Player {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> { 
+        write!(f, "Player {}", self.id)
+     }
+}
+
+
+impl Display for Player {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> { 
+        write!(f, "Player {}", self.id)
+     }
+}
+
 impl PartialEq for Player {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
@@ -37,6 +58,7 @@ pub struct PlayerBuilder {
     used_symbols: HashSet<char>
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct SymbolUsed(char);
 
 impl PlayerBuilder {
@@ -71,10 +93,20 @@ impl PlayerBuilder {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::game::player::controllers::*;
 
     #[test]
     fn create_unique_players() {
         let mut builder = PlayerBuilder::new();
-        builder.new_player('c', Box::new(x: T))
+        builder.new_player('c', Box::new(HumanController)).expect("A first player shouldn't fail no matter what");
+        builder.new_player('d', Box::new(HumanController)).expect("Unique symbol and should not fail");
+    }
+
+    #[test]
+    fn detect_repeated_symbols() {
+        let mut builder = PlayerBuilder::new();
+        builder.new_player('c', Box::new(HumanController)).expect("A first player shouldn't fail no matter what");
+        let result = builder.new_player('c', Box::new(HumanController));
+        assert_eq!(result, Err(SymbolUsed('c')));
     }
 }

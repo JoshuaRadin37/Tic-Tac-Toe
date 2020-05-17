@@ -1,4 +1,5 @@
 use crate::game::player::Player;
+use crate::game::Move;
 
 pub struct Board<'a>([[Option<&'a Player>; 3]; 3]);
 
@@ -32,7 +33,8 @@ impl<'a> Board<'a> {
         Ok(&mut self.0[y_pos as usize][x_pos as usize])
     }
 
-    pub fn make_move(&mut self, x_pos: u8, y_pos: u8, _player: &Player) -> MoveResult {
+    pub fn make_move(&mut self, next_move: Move<'a>) -> MoveResult {
+        let Move{ x_pos , y_pos, player } = next_move;
         if x_pos >= 3 || y_pos >= 3 {
             return Err(MoveError::OutOfBounds(x_pos, y_pos));
         }
@@ -41,7 +43,10 @@ impl<'a> Board<'a> {
         match position_result {
             Err(()) => Err(MoveError::OutOfBounds(x_pos, y_pos)),
             Ok(Some(other_player)) => Err(MoveError::PositionAlreadyFilled(other_player)),
-            Ok(_empty_space) => MoveResult::Ok(self.check_winner()),
+            Ok(empty_space) => {
+                *empty_space = Some(player);
+                MoveResult::Ok(self.check_winner())
+            }
         }
     }
 
@@ -145,6 +150,6 @@ mod test {
 
     #[test]
     fn can_place() {
-        
+
     }
 }

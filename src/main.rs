@@ -1,9 +1,9 @@
 pub mod game {
 
     pub struct Move<'a> {
-        x_pos: u8,
-        y_pos: u8,
-        player: &'a player::Player,
+        pub x_pos: u8,
+        pub y_pos: u8,
+        pub player: &'a player::Player,
     }
 
     impl<'a> Move<'a> {
@@ -14,10 +14,14 @@ pub mod game {
                 player,
             }
         }
+
+
     }
 
     pub mod board;
     pub mod player;
+
+    pub mod cycle;
 }
 
 fn main() {
