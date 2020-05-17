@@ -5,6 +5,7 @@ pub struct Board<'a>([[Option<&'a Player>; 3]; 3]);
 
 pub struct Winner<'a>(&'a Player);
 
+#[derive(Debug)]
 pub enum MoveError<'a> {
     OutOfBounds(u8, u8),
     PositionAlreadyFilled(&'a Player),
@@ -15,6 +16,32 @@ pub type MoveResult<'a> = Result<Option<Winner<'a>>, MoveError<'a>>;
 impl<'a> Board<'a> {
     pub fn new() -> Self {
         Self([[None; 3]; 3])
+    }
+
+    pub fn get_open_positions(&self) -> Vec<(u8, u8)> {
+        let mut output = vec![];
+
+        for (i, row) in self.0.iter().enumerate() {
+            for (j, o) in row.iter().enumerate() {
+                if o.is_some() {
+                    output.push((i as u8, j as u8));
+                }
+            }
+        }
+
+        output
+    }
+
+    pub fn filled_positions(&self) -> u8 {
+        let mut count = 0;
+        for rows in &self.0 {
+            for o in rows {
+                if o.is_some() {
+                    count += 1;
+                }
+            }
+        }
+        count
     }
 
     pub fn get_at_pos(&mut self, x_pos: u8, y_pos: u8) -> Result<&Option<&'a Player>, ()> {
@@ -34,7 +61,11 @@ impl<'a> Board<'a> {
     }
 
     pub fn make_move(&mut self, next_move: Move<'a>) -> MoveResult {
-        let Move{ x_pos , y_pos, player } = next_move;
+        let Move {
+            x_pos,
+            y_pos,
+            player,
+        } = next_move;
         if x_pos >= 3 || y_pos >= 3 {
             return Err(MoveError::OutOfBounds(x_pos, y_pos));
         }
@@ -144,12 +175,82 @@ impl<'a> Board<'a> {
     }
 }
 
-
 #[cfg(test)]
 mod test {
+    use super::*;
+    use crate::game::player::*;
+    use crate::game::player::controllers::HumanController;
 
     #[test]
-    fn can_place() {
+    fn can_place_once() {
+        let mut builder = PlayerBuilder::new();
+        let player = builder.new_player('x', Box::new(HumanController)).expect("Should be able to create player");
+        let mut board = Board::new();
 
+        let mov = Move::new(1, 1, &player);
+        match board.make_move(mov) {
+            Err(err) => {
+                panic!("{:?}", err);
+            },
+            _ => {}
+        }
+
+        match board.get_at_pos(1, 1) {
+            Ok(Some(player_found)) => {
+                assert_eq!(*player_found, &player);
+            },
+            Ok(None) => {
+                panic!("There should be a player here")
+            },
+            Err(e) => {
+                panic!("{:?}", e);
+            }
+        }
+    }
+
+    #[test]
+    fn cant_replace() {
+        let mut builder = PlayerBuilder::new();
+        let player = builder.new_player('x', Box::new(HumanController)).expect("Should be able to create player");
+        let mut board = Board::new();
+
+        let mov = Move::new(1, 1, &player);
+        match board.make_move(mov) {
+            Err(err) => {
+                panic!("{:?}", err);
+            },
+            _ => {}
+        }
+
+        let mov = Move::new(1, 1, &player);
+        match board.make_move(mov) {
+            Ok(_) => {
+                panic!("Should not be able to place here again");
+            },
+            Err(MoveError::OutOfBounds(_, _)) => {
+                panic!("Incorrect error type")
+            }
+            _ => {
+                /* intended behavior */
+            }
+        }
+    }
+
+    #[test]
+    fn out_of_bounds_check() {
+        let mut builder = PlayerBuilder::new();
+        let player = builder.new_player('x', Box::new(HumanController)).expect("Should be able to create player");
+        let mut board = Board::new();
+
+        let mov = Move::new(3, 3, &player);
+        match board.make_move(mov) {
+            Err(MoveError::OutOfBounds(_, _)) => { }
+            Err(_) => {
+                panic!("Should return out of bounds error");
+            },
+            Ok(_) => {
+                panic!("Should not be able to place here");
+            }
+        }
     }
 }
