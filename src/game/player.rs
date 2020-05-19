@@ -3,12 +3,16 @@ use crate::game::board::Board;
 
 use std::collections::HashSet;
 use std::fmt::{Debug, Display};
+use std::rc::Rc;
 
 pub mod controllers;
 pub trait Controller {
-    fn get_next_move<'a, 'b>(&self, board: &'b Board) -> Move<'a> where 'a : 'b;
+    fn get_next_move(&self, player: &Rc<Player>, board: &Board) -> Move;
 }
 
+pub trait SelfController {
+    fn next_move(&self, board: &Board) -> Move;
+}
 
 
 pub struct Player {
@@ -26,11 +30,24 @@ impl Player {
             controller,
         }
     }
+
+
+
+
+
 }
 
-impl Controller for Player {
-    fn get_next_move<'a, 'b>(&self, board: &'b Board) -> Move<'a> where 'a : 'b {
-        self.controller.get_next_move(board)
+impl SelfController for Rc<Player>  {
+
+    fn next_move(&self, board: &Board) -> Move  {
+        Controller::get_next_move(&* self.controller, self, board)
+    }
+}
+
+
+impl Controller for Rc<Player> {
+    fn get_next_move(&self, player: &Rc<Player>, board: &Board) -> Move {
+        self.controller.get_next_move(player, board)
     }
 }
 

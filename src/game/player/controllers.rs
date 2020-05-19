@@ -1,10 +1,11 @@
 use crate::game::board::Board;
-use crate::game::player::Controller;
+use crate::game::player::{Controller, Player};
 use crate::game::Move;
 
 use device_query::{DeviceQuery, DeviceState, Keycode};
 
 use std::cmp::Ordering;
+use std::rc::Rc;
 
 pub struct HumanController;
 
@@ -67,12 +68,12 @@ impl FindNearPosition for Vec<(u8, u8)> {
         ).collect();
 
         if valid_positions.is_empty() {
-           start
+            start
         } else {
             valid_positions.sort_by(
                 |(x1, y1), (x2, y2)| {
                     let p1 = ((*x1 as f64 - start.0 as f64).powi(2) + (*y1 as f64 - start.1 as f64)).sqrt();
-                    let p2 = ((*x1 as f64 - start.0 as f64).powi(2) + (*y1 as f64 - start.1 as f64)).sqrt();
+                    let p2 = ((*x2 as f64 - start.0 as f64).powi(2) + (*y2 as f64 - start.1 as f64)).sqrt();
 
                     p1.partial_cmp(&p2).unwrap()
                 }
@@ -83,14 +84,18 @@ impl FindNearPosition for Vec<(u8, u8)> {
 }
 
 impl Controller for HumanController {
-    fn get_next_move<'a, 'b>(&self, board: &'b Board) -> Move<'a>
-    where
-        'a: 'b,
+    fn get_next_move(&self, player: &Rc<Player>, board: &Board) -> Move
     {
         let positions = board.get_open_positions();
         let mut position: &(u8, u8) = &positions[0];
 
-        
+        let write_line = |(x, y): &(u8, u8)| {
+            print!("\r[Player {symbol}] - Playing at {x}, {y}", symbol = player, x = x, y = y);
+        };
+
+        write_line(position);
+
+
         loop {
             let device_state = DeviceState::new();
             let keys = device_state.get_keys();
@@ -110,23 +115,25 @@ impl Controller for HumanController {
             } else if keys.contains(&Keycode::Left) {
                 position = positions.nearest_position(&position, Direction::Left);
                 position_updated = true;
-            } 
-            
+            }
+
             if keys.contains(&Keycode::Enter) {
                 selected = true;
             }
 
             if position_updated {
+                write_line(position);
+            }
 
-
-            } 
-            
             if selected {
                 break;
             }
         }
 
-        todo!()
+        println!();
+        let (x, y) = position;
+        Move::new(*x, *y, player)
+
     }
 }
 
@@ -135,7 +142,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn relative_position_currect() {
+    fn relative_position_correct() {
         let point = (1u8, 1u8);
         // Same
         let position = point.direction_to(&(1, 1));
