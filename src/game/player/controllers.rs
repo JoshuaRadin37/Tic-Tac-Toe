@@ -72,8 +72,8 @@ impl FindNearPosition for Vec<(u8, u8)> {
         } else {
             valid_positions.sort_by(
                 |(x1, y1), (x2, y2)| {
-                    let p1 = ((*x1 as f64 - start.0 as f64).powi(2) + (*y1 as f64 - start.1 as f64)).sqrt();
-                    let p2 = ((*x2 as f64 - start.0 as f64).powi(2) + (*y2 as f64 - start.1 as f64)).sqrt();
+                    let p1 = ((*x1 as f64 - start.0 as f64).powi(2) + (*y1 as f64 - start.1 as f64).powi(2)).sqrt();
+                    let p2 = ((*x2 as f64 - start.0 as f64).powi(2) + (*y2 as f64 - start.1 as f64).powi(2)).sqrt();
 
                     p1.partial_cmp(&p2).unwrap()
                 }

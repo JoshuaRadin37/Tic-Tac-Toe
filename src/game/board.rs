@@ -1,6 +1,8 @@
 use crate::game::player::Player;
 use crate::game::Move;
 use std::rc::Rc;
+use std::fmt::{Debug, Display, Formatter};
+use std::fmt::Result as FmtResult;
 
 pub struct Board([[Option<Rc<Player>>; 3]; 3]);
 
@@ -186,6 +188,21 @@ impl Board {
     }
 }
 
+impl Display for Board {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        for rows in &self.0 {
+            for o in rows {
+                match o {
+                    Some(o) => write!(f, "{} ", o)?,
+                    None => write!(f, "  ")?
+                }
+            }
+            writeln!(f, "")?;
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -195,7 +212,13 @@ mod test {
     #[test]
     fn can_place_once() {
         let mut builder = PlayerBuilder::new();
-        let player = Rc::new(builder.new_player('x', Box::new(HumanController)).expect("Should be able to create player"));
+        let player = Rc::new(
+            builder.new_player(
+                'x',
+                Box::new(HumanController)
+            )
+                .expect("Should be able to create player"))
+            ;
         let mut board = Board::new();
 
         let mov = Move::new(1, 1, &player);
