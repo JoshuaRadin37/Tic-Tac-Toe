@@ -2,10 +2,20 @@ use crate::game::board::Board;
 use crate::game::player::{Controller, Player};
 use crate::game::Move;
 
-use device_query::{DeviceQuery, DeviceState, Keycode};
 
 use std::cmp::Ordering;
 use std::rc::Rc;
+use std::time::Duration;
+
+
+use crossterm::{execute};
+use crossterm::terminal::{Clear, ClearType};
+
+use std::io::{stdout, Write};
+use crossterm::style::Print;
+use crossterm::cursor::MoveToColumn;
+use crossterm::event::{Event, KeyCode};
+
 
 pub struct HumanController;
 
@@ -90,50 +100,81 @@ impl Controller for HumanController {
         let mut position: &(u8, u8) = &positions[0];
 
         let write_line = |(x, y): &(u8, u8)| {
-            print!("\r[Player {symbol}] - Playing at {x}, {y}", symbol = player, x = x, y = y);
+            let mut stdout = stdout();
+            let clear = Clear(ClearType::CurrentLine);
+            let mov = MoveToColumn(0);
+            let print = Print(format!("[{symbol}] - Playing at {x}, {y}", symbol = player, x = x, y = y));
+            execute!(stdout, clear, mov, print).unwrap();
+            print!("[{symbol}] - Playing at {x}, {y}", symbol = player, x = x, y = y);
         };
 
         write_line(position);
 
 
         loop {
-            let device_state = DeviceState::new();
-            let keys = device_state.get_keys();
+
+
+            let event = crossterm::event::read();
+            let mut key = None;
+            if let Ok(event) = event {
+                match event {
+                    Event::Key(key_event) => {
+                        key = Some(key_event.code);
+                    },
+                    Event::Mouse(_) => {
+                        continue;
+                    },
+                    Event::Resize(_, _) => {
+                        continue;
+                    },
+                }
+            } else {
+                panic!("Even getting failed");
+            }
 
             let mut position_updated = false;
             let mut selected = false;
 
-            if keys.contains(&Keycode::Up) {
+            if key == Some(KeyCode::Up) {
                 position = positions.nearest_position(&position, Direction::Up);
                 position_updated = true;
-            } else if keys.contains(&Keycode::Right) {
+            } else if key == Some(KeyCode::Right) {
                 position = positions.nearest_position(&position, Direction::Right);
                 position_updated = true;
-            } else if keys.contains(&Keycode::Down) {
+            } else if key == Some(KeyCode::Down) {
                 position = positions.nearest_position(&position, Direction::Down);
                 position_updated = true;
-            } else if keys.contains(&Keycode::Left) {
+            } else if key == Some(KeyCode::Left) {
                 position = positions.nearest_position(&position, Direction::Left);
                 position_updated = true;
-            }
-
-            if keys.contains(&Keycode::Enter) {
+            } else if key == Some(KeyCode::Enter) {
                 selected = true;
             }
 
-            if position_updated {
+            if position_updated && !selected {
+
                 write_line(position);
+                std::thread::sleep(Duration::from_secs_f64(0.2));
             }
 
             if selected {
+                std::thread::sleep(Duration::from_secs_f64(0.2));
                 break;
             }
+
+
         }
 
         println!();
         let (x, y) = position;
         Move::new(*x, *y, player)
 
+    }
+}
+
+impl <'a, T : 'a + Controller> From<T> for Box<dyn 'a + Controller> {
+    fn from(t: T) -> Self {
+        Box::new(t)
     }
 }
 

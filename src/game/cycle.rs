@@ -6,6 +6,8 @@ use rand::distributions::{Distribution, Standard};
 use crate::game::cycle::CurrentPlayer::{Player2, Player1};
 
 
+
+
 pub struct GameCycle {
     player1: Rc<Player>,
     player2: Rc<Player>,
@@ -60,6 +62,7 @@ impl GameCycle {
         let mut player = random::<CurrentPlayer>();
 
         while places < 9 {
+            println!("{}", self.board);
             let result = self.player_place(self.get_player(&player).clone(), &mut places);
             if result.is_some() {
                 return result;

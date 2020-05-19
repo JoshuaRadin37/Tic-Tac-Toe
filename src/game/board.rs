@@ -28,7 +28,7 @@ impl Board {
 
         for (i, row) in self.0.iter().enumerate() {
             for (j, o) in row.iter().enumerate() {
-                if o.is_some() {
+                if o.is_none() {
                     output.push((i as u8, j as u8));
                 }
             }
@@ -193,10 +193,10 @@ impl Display for Board {
         for rows in &self.0 {
             for o in rows {
                 match o {
-                    Some(o) => write!(f, "{} ", o)?,
+                    Some(o) => write!(f, "{} ", o.get_symbol())?,
                     None => write!(f, "  ")?
                 }
-            }
+            }.
             writeln!(f, "")?;
         }
         Ok(())
@@ -244,7 +244,7 @@ mod test {
 
     #[test]
     fn cant_replace() {
-        let mut builder = PlayerBuilder::new();
+        let builder = PlayerBuilder::new();
         let player = Rc::new(builder.new_player('x', Box::new(HumanController)).expect("Should be able to create player"));
         let mut board = Board::new();
 
@@ -261,7 +261,7 @@ mod test {
             Ok(_) => {
                 panic!("Should not be able to place here again");
             },
-            Err(MoveError::OutOfBounds(_, _)) => {
+            Err(MoveError::OutOfBounds(..)) => {
                 panic!("Incorrect error type")
             }
             _ => {
@@ -272,7 +272,7 @@ mod test {
 
     #[test]
     fn out_of_bounds_check() {
-        let mut builder = PlayerBuilder::new();
+        let builder = PlayerBuilder::new();
         let player = Rc::new(builder.new_player('x', Box::new(HumanController)).expect("Should be able to create player"));
         let mut board = Board::new();
 
