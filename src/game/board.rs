@@ -18,9 +18,6 @@ impl Board {
     pub fn new() -> Self {
         let base: [Option<Rc<Player>>; 3] = Default::default();
 
-        let _test = (0..3).iter().map(|_| (0..3).iter().map(|_| None ).collect::<[Option<Rc<Player>>; 3]>()).collect::<[[Option<Rc<Player>>; 3]; 3]>();
-
-
         Self([base.clone(), base.clone(), base.clone()])
     }
 
